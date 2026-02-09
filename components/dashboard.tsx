@@ -1,16 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { foundationalChecklist, intermediateLessons } from "@/lib/curriculum";
-import { recommendPath } from "@/lib/adaptive";
-
-const sampleLearnerProfile = {
-  confidence: 4,
-  valuationSkill: 3,
-  behaviorDiscipline: 6,
-};
-
-const samplePath = recommendPath(sampleLearnerProfile);
+import { LearnerProfile, recommendPath } from "@/lib/adaptive";
 
 interface CoachResult {
   headline?: string;
@@ -18,40 +10,52 @@ interface CoachResult {
   nextStep?: string;
 }
 
+const initialProfile: LearnerProfile = {
+  confidence: 4,
+  valuationSkill: 3,
+  behaviorDiscipline: 6,
+};
+
 export function Dashboard() {
+  const [profile, setProfile] = useState<LearnerProfile>(initialProfile);
   const [coach, setCoach] = useState<CoachResult | null>(null);
   const [loadingCoach, setLoadingCoach] = useState(false);
+  const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function fetchCoach() {
-      setLoadingCoach(true);
-      try {
-        const lessonTitles = samplePath
-          .map((id) => intermediateLessons.find((entry) => entry.id === id)?.title)
-          .filter(Boolean);
+  const path = useMemo(() => recommendPath(profile), [profile]);
 
-        const response = await fetch("/api/ai/coach", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            learnerProfile: sampleLearnerProfile,
-            nextLessons: lessonTitles,
-          }),
-        });
+  async function fetchCoach() {
+    setLoadingCoach(true);
+    setCoach(null);
 
-        if (!response.ok) return;
+    try {
+      const lessonTitles = path
+        .map((id) => intermediateLessons.find((entry) => entry.id === id)?.title)
+        .filter(Boolean);
 
-        const data = await response.json();
-        setCoach(data);
-      } catch {
-        // Best-effort section; keep page functional when AI call fails.
-      } finally {
-        setLoadingCoach(false);
-      }
+      const response = await fetch("/api/ai/coach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          learnerProfile: profile,
+          nextLessons: lessonTitles,
+        }),
+      });
+
+      if (!response.ok) return;
+
+      const data = await response.json();
+      setCoach(data);
+    } catch {
+      // Keep UI functional when AI call fails.
+    } finally {
+      setLoadingCoach(false);
     }
+  }
 
-    fetchCoach();
-  }, []);
+  function updateProfile(field: keyof LearnerProfile, value: number) {
+    setProfile((prev) => ({ ...prev, [field]: value }));
+  }
 
   return (
     <main>
@@ -60,10 +64,47 @@ export function Dashboard() {
         <span className="badge">AI-ready</span>
         <h1>Investease Learning Studio</h1>
         <p>
-          A structured learning platform for investing fundamentals and intermediate practice. Learners
-          move through guided modules, while an adaptive engine prioritizes the next lessons based on
-          confidence, valuation skill, and behavior discipline.
+          A structured learning platform for investing fundamentals and intermediate practice. Adjust the
+          sliders to simulate learner readiness and watch the adaptive pathway reorder instantly.
         </p>
+      </section>
+
+      <section className="card controls">
+        <h2>Learner Profile Simulator</h2>
+        <div className="slider-grid">
+          <label>
+            Confidence: <strong>{profile.confidence}/10</strong>
+            <input
+              type="range"
+              min={1}
+              max={10}
+              value={profile.confidence}
+              onChange={(event) => updateProfile("confidence", Number(event.target.value))}
+            />
+          </label>
+          <label>
+            Valuation Skill: <strong>{profile.valuationSkill}/10</strong>
+            <input
+              type="range"
+              min={1}
+              max={10}
+              value={profile.valuationSkill}
+              onChange={(event) => updateProfile("valuationSkill", Number(event.target.value))}
+            />
+          </label>
+          <label>
+            Behavior Discipline: <strong>{profile.behaviorDiscipline}/10</strong>
+            <input
+              type="range"
+              min={1}
+              max={10}
+              value={profile.behaviorDiscipline}
+              onChange={(event) =>
+                updateProfile("behaviorDiscipline", Number(event.target.value))
+              }
+            />
+          </label>
+        </div>
       </section>
 
       <section className="card">
@@ -77,9 +118,12 @@ export function Dashboard() {
 
       <section className="pathway">
         <h2>Adaptive Pathway Suggestion</h2>
-        <small>Sample learner profile → confidence 4/10, valuation 3/10, behavior discipline 6/10</small>
+        <small>
+          Live learner profile → confidence {profile.confidence}/10, valuation {profile.valuationSkill}
+          /10, behavior discipline {profile.behaviorDiscipline}/10
+        </small>
         <ol>
-          {samplePath.map((id) => {
+          {path.map((id) => {
             const lesson = intermediateLessons.find((entry) => entry.id === id);
             return <li key={id}>{lesson?.title ?? id}</li>;
           })}
@@ -87,24 +131,40 @@ export function Dashboard() {
       </section>
 
       <section className="grid">
-        {intermediateLessons.map((lesson) => (
-          <article className="module" key={lesson.id}>
-            <h3>{lesson.title}</h3>
-            <p>{lesson.objective}</p>
-            <strong>Activities</strong>
-            <ul>
-              {lesson.activities.map((activity) => (
-                <li key={activity}>{activity}</li>
-              ))}
-            </ul>
-            <strong>Mastery signals</strong>
-            <ul>
-              {lesson.masterySignals.map((signal) => (
-                <li key={signal}>{signal}</li>
-              ))}
-            </ul>
-          </article>
-        ))}
+        {intermediateLessons.map((lesson) => {
+          const isOpen = activeLessonId === lesson.id;
+
+          return (
+            <article className="module" key={lesson.id}>
+              <button
+                type="button"
+                className="module-toggle"
+                onClick={() => setActiveLessonId(isOpen ? null : lesson.id)}
+              >
+                <h3>{lesson.title}</h3>
+                <span>{isOpen ? "Hide" : "Show"}</span>
+              </button>
+              <p>{lesson.objective}</p>
+
+              {isOpen ? (
+                <>
+                  <strong>Activities</strong>
+                  <ul>
+                    {lesson.activities.map((activity) => (
+                      <li key={activity}>{activity}</li>
+                    ))}
+                  </ul>
+                  <strong>Mastery signals</strong>
+                  <ul>
+                    {lesson.masterySignals.map((signal) => (
+                      <li key={signal}>{signal}</li>
+                    ))}
+                  </ul>
+                </>
+              ) : null}
+            </article>
+          );
+        })}
       </section>
 
       <section className="setup">
@@ -118,16 +178,28 @@ export function Dashboard() {
 
       <section className="card">
         <h2>AI Coach Preview</h2>
-        {loadingCoach ? <p>Generating guidance...</p> : null}
+        <button type="button" className="primary-btn" onClick={fetchCoach} disabled={loadingCoach}>
+          {loadingCoach ? "Generating guidance..." : "Generate AI Coach Guidance"}
+        </button>
+
         {!loadingCoach && coach?.summary ? (
-          <>
-            {coach.headline ? <p><strong>{coach.headline}</strong></p> : null}
+          <div className="coach-output">
+            {coach.headline ? (
+              <p>
+                <strong>{coach.headline}</strong>
+              </p>
+            ) : null}
             <p>{coach.summary}</p>
-            {coach.nextStep ? <p><strong>Next step:</strong> {coach.nextStep}</p> : null}
-          </>
+            {coach.nextStep ? (
+              <p>
+                <strong>Next step:</strong> {coach.nextStep}
+              </p>
+            ) : null}
+          </div>
         ) : null}
+
         {!loadingCoach && !coach?.summary ? (
-          <p>AI guidance unavailable. Configure OPEN_AI_API_KEY in Vercel.</p>
+          <p>Click generate to fetch guidance using OPEN_AI_API_KEY.</p>
         ) : null}
       </section>
     </main>

@@ -60,3 +60,55 @@ ul {
 small {
   color: #52607a;
 }
+
+.controls .slider-grid {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.controls label {
+  display: grid;
+  gap: 0.4rem;
+  font-size: 0.95rem;
+}
+
+.controls input[type="range"] {
+  width: 100%;
+}
+
+.module-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  margin-bottom: 0.4rem;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.module-toggle span {
+  font-size: 0.82rem;
+  color: #2448d8;
+}
+
+.primary-btn {
+  border: 0;
+  background: #2448d8;
+  color: #fff;
+  padding: 0.5rem 0.85rem;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.primary-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.coach-output {
+  margin-top: 0.75rem;
+}
