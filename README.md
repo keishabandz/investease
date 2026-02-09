@@ -7,6 +7,7 @@ MOOC-style and adaptive learning platform concept for investing education, built
 - Adaptive lesson recommendation logic based on learner profile signals.
 - Supabase-ready schema for learner profiles and lesson progress.
 - Next.js app suitable for deployment on Vercel.
+- Optional OpenAI-powered coaching endpoint for lightweight guidance.
 
 ## Local development
 ```bash
@@ -22,6 +23,8 @@ npm run dev
 5. In Vercel project settings, add:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `NEXT_PUBLIC_APP_URL` (trailing slash and extra spaces are tolerated)
+   - `OPEN_AI_API_KEY` (optional, for AI coach preview)
 6. Deploy.
 
 ## AI model workflow (cost-aware)
