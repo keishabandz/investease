@@ -41,6 +41,29 @@ export type ModuleTrainingContent = {
   checkpoint: CheckpointQuestion[];
 };
 
+export type LessonTaxonomy = {
+  moduleTags: string[];
+  activityTags: string[][];
+  assessmentTags: string[];
+  evidenceSourceTags: string[];
+};
+
+export type GovernanceMeta = {
+  version: string;
+  lastUpdated: string;
+};
+
+export type SourceOfTruthLink = {
+  label: string;
+  url: string;
+  sourceType: "filing" | "economic-data" | "labor-data" | "industry-data" | "policy" | "method";
+};
+
+export type ActivityEvidenceMap = {
+  activityIndex: number;
+  links: SourceOfTruthLink[];
+};
+
 export const foundationalChecklist = [
   "Select one listed business and map what it sells, who buys it, and how it makes money.",
   "Identify major revenue streams, major costs, and one long-term growth driver.",
@@ -229,4 +252,137 @@ export const moduleTrainingContent: Partial<Record<string, ModuleTrainingContent
       }
     ]
   }
+};
+
+export const taxonomyByLessonId: Record<string, LessonTaxonomy> = {
+  "business-models": {
+    moduleTags: ["fundamental-analysis", "industry-structure", "durability"],
+    activityTags: [
+      ["revenue-modeling", "cost-structure", "customer-segmentation"],
+      ["five-forces", "competitive-pressure", "market-dynamics"],
+      ["barriers-to-entry", "moat-analysis", "risk-reasoning"]
+    ],
+    assessmentTags: ["checkpoint-quiz", "evidence-based-judgement", "structural-advantage"],
+    evidenceSourceTags: ["sec-filings", "macro-data", "labor-and-cost-data", "industry-demographics"]
+  },
+  "management-quality": {
+    moduleTags: ["leadership-analysis", "capital-allocation"],
+    activityTags: [
+      ["decision-quality", "communication-clarity"],
+      ["reinvestment-policy", "balance-sheet-policy"],
+      ["governance-rubric", "transparency"]
+    ],
+    assessmentTags: ["case-comparison", "evidence-quality"],
+    evidenceSourceTags: ["management-disclosures", "historical-capital-returns"]
+  },
+  "portfolio-management": {
+    moduleTags: ["portfolio-construction", "risk-management"],
+    activityTags: [
+      ["sector-exposure", "concentration-risk"],
+      ["position-sizing", "probability-weighting"],
+      ["rebalance-rules", "thesis-monitoring"]
+    ],
+    assessmentTags: ["portfolio-map", "risk-trigger-design"],
+    evidenceSourceTags: ["holdings-data", "volatility-data"]
+  },
+  "fair-value": {
+    moduleTags: ["valuation", "scenario-analysis"],
+    activityTags: [
+      ["base-case", "bull-bear-cases"],
+      ["value-range", "margin-of-safety"],
+      ["assumption-documentation", "model-explainability"]
+    ],
+    assessmentTags: ["valuation-rationale", "assumption-integrity"],
+    evidenceSourceTags: ["historical-financials", "macro-assumptions"]
+  },
+  "idea-discovery": {
+    moduleTags: ["idea-generation", "opportunity-filtering"],
+    activityTags: [
+      ["screening", "sector-diversification"],
+      ["quick-triage", "risk-scoring"],
+      ["decision-framework", "research-prioritization"]
+    ],
+    assessmentTags: ["watchlist-quality", "decision-discipline"],
+    evidenceSourceTags: ["screening-data", "sector-data"]
+  },
+  "investor-psychology": {
+    moduleTags: ["behavioral-finance", "decision-hygiene"],
+    activityTags: [
+      ["bias-identification", "error-review"],
+      ["checklist-design", "pre-commitment"],
+      ["decision-journaling", "post-mortem"]
+    ],
+    assessmentTags: ["bias-mitigation", "process-discipline"],
+    evidenceSourceTags: ["journal-data", "behavior-patterns"]
+  }
+};
+
+export const governanceByLessonId: Record<string, GovernanceMeta> = {
+  "business-models": { version: "1.3.0", lastUpdated: "2026-02-10" },
+  "management-quality": { version: "1.1.0", lastUpdated: "2026-02-10" },
+  "portfolio-management": { version: "1.1.0", lastUpdated: "2026-02-10" },
+  "fair-value": { version: "1.1.0", lastUpdated: "2026-02-10" },
+  "idea-discovery": { version: "1.0.1", lastUpdated: "2026-02-10" },
+  "investor-psychology": { version: "1.0.1", lastUpdated: "2026-02-10" }
+};
+
+export const sourceOfTruthByLessonId: Record<string, ActivityEvidenceMap[]> = {
+  "business-models": [
+    {
+      activityIndex: 0,
+      links: [
+        {
+          label: "SEC EDGAR API Docs",
+          url: "https://www.sec.gov/edgar/sec-api-documentation",
+          sourceType: "filing"
+        },
+        {
+          label: "SEC Company Filings Search",
+          url: "https://www.sec.gov/edgar/search/",
+          sourceType: "filing"
+        }
+      ]
+    },
+    {
+      activityIndex: 1,
+      links: [
+        {
+          label: "Census Business Dynamics Statistics",
+          url: "https://www.census.gov/data/data-tools/bds-explorer.html",
+          sourceType: "industry-data"
+        },
+        {
+          label: "FRED API Documentation",
+          url: "https://fred.stlouisfed.org/docs/api/fred/",
+          sourceType: "economic-data"
+        }
+      ]
+    },
+    {
+      activityIndex: 2,
+      links: [
+        {
+          label: "BLS Public Data API",
+          url: "https://www.bls.gov/bls/api_features.htm",
+          sourceType: "labor-data"
+        }
+      ]
+    }
+  ],
+  "management-quality": [
+    {
+      activityIndex: 0,
+      links: [
+        {
+          label: "SEC Filings Search",
+          url: "https://www.sec.gov/edgar/search/",
+          sourceType: "filing"
+        }
+      ]
+    }
+  ],
+  "portfolio-management": [],
+  "fair-value": [],
+  "idea-discovery": [],
+  "investor-psychology": []
 };

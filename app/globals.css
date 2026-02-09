@@ -75,6 +75,16 @@ body {
   font-size: 1.25rem;
 }
 
+.policy-banner {
+  border: 1px solid #f0b39a;
+  background: #fff4ef;
+  color: #6f2d14;
+  border-radius: 10px;
+  padding: 0.65rem 0.75rem;
+  margin-bottom: 0.8rem;
+  font-size: 0.9rem;
+}
+
 .overview-grid {
   display: grid;
   grid-template-columns: 1fr 1.4fr 1fr;
@@ -267,6 +277,15 @@ body {
   margin-top: 0.2rem;
 }
 
+.activity-meta {
+  margin: 0.3rem 0 0.7rem 0;
+  padding-left: 0.2rem;
+}
+
+.taxonomy-wrap p {
+  margin: 0.25rem 0;
+}
+
 .training-group {
   border-top: 1px solid #e5ebf6;
   padding-top: 0.75rem;
@@ -427,6 +446,10 @@ th {
 
 .coach-output {
   margin-top: 0.75rem;
+}
+
+.analytics-panel ul {
+  margin-bottom: 0.75rem;
 }
 
 .muted {

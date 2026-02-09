@@ -3,9 +3,12 @@
 import { useMemo, useState } from "react";
 import {
   foundationalChecklist,
+  governanceByLessonId,
   intermediateLessons,
   moduleTrainingContent,
   ModuleTrainingContent,
+  sourceOfTruthByLessonId,
+  taxonomyByLessonId,
 } from "@/lib/curriculum";
 import { LearnerProfile, recommendPath } from "@/lib/adaptive";
 
@@ -16,6 +19,20 @@ interface CoachResult {
 }
 
 type Stage = 0 | 1 | 2 | 3 | 4;
+type ViewMode = "dashboard" | "learning" | "final-assessment" | "certificate";
+
+type ModuleCompletionMeta = {
+  completedAt: string;
+  score: number;
+  total: number;
+  attempts: number;
+};
+
+type FinalQuestion = {
+  question: string;
+  options: string[];
+  correctIndex: number;
+};
 
 const STAGE_LABELS = [
   "Module Brief",
@@ -30,6 +47,54 @@ const initialProfile: LearnerProfile = {
   valuationSkill: 3,
   behaviorDiscipline: 6,
 };
+
+const finalAssessmentQuestions: FinalQuestion[] = [
+  {
+    question: "Which practice best reduces hallucination risk in AI-assisted analysis?",
+    options: [
+      "Accept the first model output",
+      "Ground claims with source-of-truth evidence and explicit assumptions",
+      "Avoid any structured inputs"
+    ],
+    correctIndex: 1,
+  },
+  {
+    question: "What is the best indicator of adaptive learning effectiveness?",
+    options: [
+      "Only page views",
+      "Progression funnel plus checkpoint pass rate",
+      "Only total logins"
+    ],
+    correctIndex: 1,
+  },
+  {
+    question: "Why maintain taxonomy and metadata in learning content?",
+    options: [
+      "For stylistic formatting only",
+      "To improve retrieval, governance, and explainability",
+      "To reduce the number of modules"
+    ],
+    correctIndex: 1,
+  },
+  {
+    question: "Which policy stance is appropriate for this app?",
+    options: [
+      "Provide direct personalized financial advice",
+      "Educational guidance only, with transparent limitations",
+      "No disclaimers needed"
+    ],
+    correctIndex: 1,
+  },
+  {
+    question: "What should happen before module completion is granted?",
+    options: [
+      "Completion without assessment",
+      "Pass checkpoint against threshold and record evidence",
+      "Only click next"
+    ],
+    correctIndex: 1,
+  },
+];
 
 function fallbackTraining(title: string, objective: string, activities: string[]): ModuleTrainingContent {
   return {
@@ -88,13 +153,20 @@ function fallbackTraining(title: string, objective: string, activities: string[]
 
 export function Dashboard() {
   const [profile, setProfile] = useState<LearnerProfile>(initialProfile);
-  const [viewMode, setViewMode] = useState<"dashboard" | "learning">("dashboard");
+  const [viewMode, setViewMode] = useState<ViewMode>("dashboard");
   const [selectedLessonId, setSelectedLessonId] = useState(intermediateLessons[0]?.id ?? "");
   const [completedActivities, setCompletedActivities] = useState<Record<string, boolean>>({});
   const [moduleStarted, setModuleStarted] = useState<Record<string, boolean>>({});
   const [moduleStage, setModuleStage] = useState<Record<string, Stage>>({});
   const [quizAnswers, setQuizAnswers] = useState<Record<string, number>>({});
   const [quizSubmitted, setQuizSubmitted] = useState<Record<string, boolean>>({});
+  const [moduleCheckpointAttempts, setModuleCheckpointAttempts] = useState<Record<string, number>>({});
+  const [modulePassed, setModulePassed] = useState<Record<string, boolean>>({});
+  const [moduleCompletionMeta, setModuleCompletionMeta] = useState<Record<string, ModuleCompletionMeta>>({});
+  const [finalAnswers, setFinalAnswers] = useState<Record<number, number>>({});
+  const [finalSubmitted, setFinalSubmitted] = useState(false);
+  const [finalPassed, setFinalPassed] = useState(false);
+  const [finalCompletedAt, setFinalCompletedAt] = useState<string | null>(null);
   const [coach, setCoach] = useState<CoachResult | null>(null);
   const [loadingCoach, setLoadingCoach] = useState(false);
   const [learningNavOpen, setLearningNavOpen] = useState(false);
@@ -107,6 +179,10 @@ export function Dashboard() {
   const training =
     moduleTrainingContent[selectedLesson.id] ??
     fallbackTraining(selectedLesson.title, selectedLesson.objective, selectedLesson.activities);
+
+  const taxonomy = taxonomyByLessonId[selectedLesson.id];
+  const governance = governanceByLessonId[selectedLesson.id];
+  const sourceMapping = sourceOfTruthByLessonId[selectedLesson.id] ?? [];
 
   const selectedActivities = selectedLesson.activities;
   const stage = moduleStage[selectedLesson.id] ?? 0;
@@ -136,6 +212,37 @@ export function Dashboard() {
     return stageValue === 4;
   });
 
+  const totalModules = intermediateLessons.length;
+  const startedModules = intermediateLessons.filter((lesson) => moduleStarted[lesson.id]).length;
+  const completedModules = intermediateLessons.filter((lesson) => (moduleStage[lesson.id] ?? 0) === 4).length;
+  const submittedModules = intermediateLessons.filter((lesson) => (moduleCheckpointAttempts[lesson.id] ?? 0) > 0)
+    .length;
+  const passedModules = intermediateLessons.filter((lesson) => modulePassed[lesson.id]).length;
+  const totalRetries = Object.values(moduleCheckpointAttempts).reduce(
+    (sum, attempts) => sum + Math.max(attempts - 1, 0),
+    0
+  );
+
+  const startRate = totalModules > 0 ? Math.round((startedModules / totalModules) * 100) : 0;
+  const completionRate = totalModules > 0 ? Math.round((completedModules / totalModules) * 100) : 0;
+  const checkpointPassRate = submittedModules > 0 ? Math.round((passedModules / submittedModules) * 100) : 0;
+
+  const dropoffCounts = {
+    brief: intermediateLessons.filter((lesson) => moduleStarted[lesson.id] && (moduleStage[lesson.id] ?? 0) === 0)
+      .length,
+    practice: intermediateLessons.filter((lesson) => moduleStarted[lesson.id] && (moduleStage[lesson.id] ?? 0) === 1)
+      .length,
+    training: intermediateLessons.filter((lesson) => moduleStarted[lesson.id] && (moduleStage[lesson.id] ?? 0) === 2)
+      .length,
+    checkpoint: intermediateLessons.filter((lesson) => moduleStarted[lesson.id] && (moduleStage[lesson.id] ?? 0) === 3)
+      .length,
+  };
+
+  const finalScore = finalAssessmentQuestions.reduce((score, question, index) => {
+    return score + (finalAnswers[index] === question.correctIndex ? 1 : 0);
+  }, 0);
+  const finalPassThreshold = Math.ceil(finalAssessmentQuestions.length * 0.7);
+
   function updateProfile(field: keyof LearnerProfile, value: number) {
     setProfile((prev) => ({ ...prev, [field]: value }));
   }
@@ -163,9 +270,28 @@ export function Dashboard() {
   }
 
   function submitCheckpoint() {
-    setQuizSubmitted((prev) => ({ ...prev, [selectedLesson.id]: true }));
+    const lessonId = selectedLesson.id;
+    const nextAttempts = (moduleCheckpointAttempts[lessonId] ?? 0) + 1;
+
+    setQuizSubmitted((prev) => ({ ...prev, [lessonId]: true }));
+    setModuleCheckpointAttempts((prev) => ({ ...prev, [lessonId]: nextAttempts }));
+
+    if (completedCount !== selectedActivities.length) {
+      return;
+    }
+
     if (quizScore >= passThreshold) {
-      setStage(selectedLesson.id, 4);
+      setModulePassed((prev) => ({ ...prev, [lessonId]: true }));
+      setModuleCompletionMeta((prev) => ({
+        ...prev,
+        [lessonId]: {
+          completedAt: new Date().toISOString(),
+          score: quizScore,
+          total: training.checkpoint.length,
+          attempts: nextAttempts,
+        },
+      }));
+      setStage(lessonId, 4);
     }
   }
 
@@ -184,6 +310,17 @@ export function Dashboard() {
     }
 
     startModule(next.id);
+  }
+
+  function submitFinalAssessment() {
+    setFinalSubmitted(true);
+    const passed = finalScore >= finalPassThreshold;
+    setFinalPassed(passed);
+
+    if (passed) {
+      setFinalCompletedAt(new Date().toISOString());
+      setViewMode("certificate");
+    }
   }
 
   async function fetchCoach() {
@@ -213,9 +350,100 @@ export function Dashboard() {
     }
   }
 
+  if (viewMode === "certificate") {
+    return (
+      <main className="learning-mode">
+        <section className="panel completion-screen">
+          <h2>Program Certificate</h2>
+          <p>
+            Recognition unlocked: <strong>Adaptive Investing Program Completion Badge</strong>
+          </p>
+          <p className="muted">
+            Completed at: {finalCompletedAt ? new Date(finalCompletedAt).toLocaleString() : "-"}
+          </p>
+
+          <h3>Score Summary</h3>
+          <ul>
+            <li>Final assessment: {finalScore}/{finalAssessmentQuestions.length}</li>
+            <li>Modules completed: {completedModules}/{totalModules}</li>
+            <li>Checkpoint pass rate: {checkpointPassRate}%</li>
+            <li>Total retries before passing: {totalRetries}</li>
+          </ul>
+
+          <h3>Module Completion Timeline</h3>
+          <ul>
+            {intermediateLessons.map((lesson) => {
+              const meta = moduleCompletionMeta[lesson.id];
+              return (
+                <li key={lesson.id}>
+                  {lesson.title}: {meta ? `${new Date(meta.completedAt).toLocaleString()} (${meta.score}/${meta.total})` : "Not completed"}
+                </li>
+              );
+            })}
+          </ul>
+
+          <div className="actions-row">
+            <button type="button" className="primary-btn" onClick={() => setViewMode("dashboard")}>
+              Back To Dashboard
+            </button>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  if (viewMode === "final-assessment") {
+    return (
+      <main className="learning-mode">
+        <section className="panel">
+          <h2>Final Program Assessment</h2>
+          <p className="muted">Pass score: {finalPassThreshold}/{finalAssessmentQuestions.length}</p>
+
+          {finalAssessmentQuestions.map((question, index) => (
+            <div key={question.question} className="quiz-card">
+              <p><strong>Q{index + 1}.</strong> {question.question}</p>
+              <div className="quiz-options">
+                {question.options.map((option, optionIndex) => (
+                  <label key={option} className="option-item">
+                    <input
+                      type="radio"
+                      name={`final-q-${index}`}
+                      checked={finalAnswers[index] === optionIndex}
+                      onChange={() => setFinalAnswers((prev) => ({ ...prev, [index]: optionIndex }))}
+                    />
+                    <span>{option}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          <div className="actions-row">
+            <button type="button" className="secondary-btn" onClick={() => setViewMode("dashboard")}>
+              Back
+            </button>
+            <button type="button" className="primary-btn" onClick={submitFinalAssessment}>
+              Submit Final Assessment
+            </button>
+          </div>
+
+          {finalSubmitted ? (
+            <p className={finalPassed ? "quiz-pass" : "quiz-fail"}>
+              Score: {finalScore}/{finalAssessmentQuestions.length}. {finalPassed ? "Passed." : "Not passed yet. Review and retry."}
+            </p>
+          ) : null}
+        </section>
+      </main>
+    );
+  }
+
   if (viewMode === "learning") {
     return (
       <main className="learning-mode">
+        <div className="policy-banner">
+          AI outputs are educational guidance only and not personal financial advice.
+        </div>
+
         <header className="learn-header">
           <button
             type="button"
@@ -292,6 +520,16 @@ export function Dashboard() {
           </aside>
 
           <section className="learn-content panel">
+            <section className="training-group">
+              <h3>Knowledge Governance</h3>
+              <p className="muted">Content version {governance?.version ?? "1.0.0"} • Last updated {governance?.lastUpdated ?? "2026-02-10"}</p>
+              <div className="taxonomy-wrap">
+                <p><strong>Module tags:</strong> {taxonomy?.moduleTags.join(", ") || "-"}</p>
+                <p><strong>Assessment tags:</strong> {taxonomy?.assessmentTags.join(", ") || "-"}</p>
+                <p><strong>Evidence tags:</strong> {taxonomy?.evidenceSourceTags.join(", ") || "-"}</p>
+              </div>
+            </section>
+
             {stage === 0 ? (
               <section>
                 <h2>Module Brief</h2>
@@ -317,6 +555,9 @@ export function Dashboard() {
                   {selectedActivities.map((activity, index) => {
                     const key = `${selectedLesson.id}:${index}`;
                     const checked = Boolean(completedActivities[key]);
+                    const activityTags = taxonomy?.activityTags[index] ?? [];
+                    const evidenceLinks = sourceMapping.find((entry) => entry.activityIndex === index)?.links ?? [];
+
                     return (
                       <li key={key}>
                         <label className={checked ? "check-item checked" : "check-item"}>
@@ -327,6 +568,22 @@ export function Dashboard() {
                           />
                           <span>{activity}</span>
                         </label>
+                        <div className="activity-meta">
+                          {activityTags.length > 0 ? (
+                            <p className="muted"><strong>Tags:</strong> {activityTags.join(", ")}</p>
+                          ) : null}
+                          {evidenceLinks.length > 0 ? (
+                            <p className="muted">
+                              <strong>Source-of-truth:</strong>{" "}
+                              {evidenceLinks.map((link, linkIndex) => (
+                                <span key={link.url}>
+                                  <a href={link.url} target="_blank" rel="noreferrer">{link.label}</a>
+                                  {linkIndex < evidenceLinks.length - 1 ? ", " : ""}
+                                </span>
+                              ))}
+                            </p>
+                          ) : null}
+                        </div>
                       </li>
                     );
                   })}
@@ -450,7 +707,12 @@ export function Dashboard() {
                   <button type="button" className="secondary-btn" onClick={() => goStage(-1)}>
                     Back
                   </button>
-                  <button type="button" className="primary-btn" onClick={submitCheckpoint}>
+                  <button
+                    type="button"
+                    className="primary-btn"
+                    onClick={submitCheckpoint}
+                    disabled={completedCount !== selectedActivities.length}
+                  >
                     Submit Assessment
                   </button>
                 </div>
@@ -470,7 +732,10 @@ export function Dashboard() {
                   Recognition unlocked: <strong>{selectedLesson.title} Completion Badge</strong>
                 </p>
                 <p className="muted">
-                  You completed guided practice, deep training, and checkpoint assessment.
+                  Completed at: {moduleCompletionMeta[selectedLesson.id] ? new Date(moduleCompletionMeta[selectedLesson.id].completedAt).toLocaleString() : "-"}
+                </p>
+                <p className="muted">
+                  Checkpoint score: {moduleCompletionMeta[selectedLesson.id]?.score ?? 0}/{moduleCompletionMeta[selectedLesson.id]?.total ?? training.checkpoint.length} • Attempts: {moduleCompletionMeta[selectedLesson.id]?.attempts ?? moduleCheckpointAttempts[selectedLesson.id] ?? 0}
                 </p>
                 <div className="actions-row">
                   <button type="button" className="primary-btn" onClick={nextModule}>
@@ -484,7 +749,7 @@ export function Dashboard() {
                 </div>
                 {allModulesCompleted ? (
                   <p className="final-recognition">
-                    Program milestone achieved: All modules completed.
+                    Program milestone achieved: All modules completed. Final assessment now available.
                   </p>
                 ) : null}
               </section>
@@ -497,6 +762,10 @@ export function Dashboard() {
 
   return (
     <main className="learning-app">
+      <div className="policy-banner">
+        AI outputs are educational guidance only and not personal financial advice.
+      </div>
+
       <header className="topbar">
         <div>
           <p className="eyebrow">Learning Platform</p>
@@ -577,6 +846,16 @@ export function Dashboard() {
               );
             })}
           </div>
+
+          {allModulesCompleted ? (
+            <div className="training-group">
+              <h3>Final Program Assessment</h3>
+              <p className="muted">Unlock certificate after passing final assessment.</p>
+              <button type="button" className="primary-btn" onClick={() => setViewMode("final-assessment")}>
+                Start Final Assessment
+              </button>
+            </div>
+          ) : null}
         </section>
 
         <section className="panel">
@@ -600,6 +879,24 @@ export function Dashboard() {
           ) : (
             <p className="muted">Click Generate Guidance to get personalized coaching.</p>
           )}
+        </section>
+
+        <section className="panel analytics-panel">
+          <h2>Analytics Panel</h2>
+          <ul>
+            <li>Start rate: {startRate}% ({startedModules}/{totalModules})</li>
+            <li>Completion rate: {completionRate}% ({completedModules}/{totalModules})</li>
+            <li>Checkpoint pass rate: {checkpointPassRate}% ({passedModules}/{submittedModules})</li>
+            <li>Total retries: {totalRetries}</li>
+          </ul>
+
+          <h3>Drop-off Points</h3>
+          <ul>
+            <li>Module Brief: {dropoffCounts.brief}</li>
+            <li>Guided Practice: {dropoffCounts.practice}</li>
+            <li>Deep Training: {dropoffCounts.training}</li>
+            <li>Checkpoint: {dropoffCounts.checkpoint}</li>
+          </ul>
         </section>
       </div>
     </main>
