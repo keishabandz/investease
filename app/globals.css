@@ -32,6 +32,7 @@ body {
 .topbar h1 {
   margin: 0.1rem 0 0;
   font-size: clamp(1.4rem, 2.2vw, 2rem);
+  line-height: 1.2;
 }
 
 .eyebrow {
@@ -73,7 +74,7 @@ body {
   background: #ffffff;
   border: 1px solid #d8e1f0;
   border-radius: 14px;
-  padding: 1rem;
+  padding: clamp(0.85rem, 1.5vw, 1rem);
 }
 
 .sidebar,
@@ -98,11 +99,18 @@ body {
   background: #f8fbff;
   color: inherit;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.6rem;
   text-align: left;
-  padding: 0.55rem 0.7rem;
+  padding: 0.6rem 0.7rem;
   cursor: pointer;
+  min-height: 44px;
+}
+
+.lesson-btn span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.25;
 }
 
 .lesson-btn.active {
@@ -122,6 +130,16 @@ body {
   font-weight: 700;
 }
 
+.lesson-status {
+  font-size: 0.68rem;
+  border-radius: 999px;
+  border: 1px solid #cad8f0;
+  background: #edf3ff;
+  color: #31579a;
+  padding: 0.2rem 0.5rem;
+  white-space: nowrap;
+}
+
 .hero-panel h2 {
   margin-top: 0.2rem;
   margin-bottom: 0.4rem;
@@ -137,6 +155,7 @@ body {
 
 .progress-track {
   margin-top: 0.4rem;
+  margin-bottom: 0.8rem;
   width: 100%;
   height: 8px;
   border-radius: 999px;
@@ -156,6 +175,27 @@ body {
   gap: 1rem;
 }
 
+.workflow {
+  margin-bottom: 1rem;
+  border: 1px solid #dbe4f3;
+  border-radius: 10px;
+  padding: 0.75rem;
+  background: #f9fbff;
+}
+
+.step-label {
+  font-size: 0.82rem;
+  color: #31579a;
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+}
+
+.workflow-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .checklist {
   list-style: none;
   margin: 0;
@@ -170,7 +210,7 @@ body {
   align-items: flex-start;
   border: 1px solid #dbe4f3;
   background: #fbfdff;
-  padding: 0.55rem 0.65rem;
+  padding: 0.65rem 0.7rem;
   border-radius: 10px;
 }
 
@@ -202,17 +242,29 @@ body {
   grid-column: 1 / -1;
 }
 
-.primary-btn {
+.primary-btn,
+.secondary-btn {
   border: 0;
-  background: #1f56cc;
-  color: #fff;
   border-radius: 10px;
-  padding: 0.55rem 0.85rem;
+  padding: 0.65rem 0.95rem;
+  min-height: 44px;
   font-weight: 700;
   cursor: pointer;
 }
 
-.primary-btn:disabled {
+.primary-btn {
+  background: #1f56cc;
+  color: #fff;
+}
+
+.secondary-btn {
+  background: #edf3ff;
+  color: #1f56cc;
+  border: 1px solid #cad8f0;
+}
+
+.primary-btn:disabled,
+.secondary-btn:disabled {
   opacity: 0.65;
   cursor: not-allowed;
 }
@@ -245,6 +297,14 @@ ol {
     grid-template-columns: 1fr;
   }
 
+  .sidebar {
+    order: 2;
+  }
+
+  .content {
+    order: 1;
+  }
+
   .topbar {
     align-items: flex-start;
     flex-direction: column;
@@ -253,5 +313,27 @@ ol {
   .topbar-progress {
     text-align: left;
     min-width: 0;
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .learning-app {
+    padding: 1rem 0.75rem 1.25rem;
+  }
+
+  .panel {
+    border-radius: 12px;
+  }
+
+  .primary-btn,
+  .secondary-btn,
+  .workflow-actions {
+    width: 100%;
+  }
+
+  .workflow-actions {
+    display: grid;
+    gap: 0.5rem;
   }
 }

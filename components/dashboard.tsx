@@ -20,6 +20,8 @@ export function Dashboard() {
   const [profile, setProfile] = useState<LearnerProfile>(initialProfile);
   const [selectedLessonId, setSelectedLessonId] = useState(intermediateLessons[0]?.id ?? "");
   const [completedActivities, setCompletedActivities] = useState<Record<string, boolean>>({});
+  const [moduleStarted, setModuleStarted] = useState<Record<string, boolean>>({});
+  const [moduleStepIndex, setModuleStepIndex] = useState<Record<string, number>>({});
   const [coach, setCoach] = useState<CoachResult | null>(null);
   const [loadingCoach, setLoadingCoach] = useState(false);
 
@@ -28,18 +30,25 @@ export function Dashboard() {
   const selectedLesson =
     intermediateLessons.find((lesson) => lesson.id === selectedLessonId) ?? intermediateLessons[0];
 
-  const completedCount = selectedLesson.activities.filter((_, index) => {
+  const selectedActivities = selectedLesson.activities;
+  const stepIndex = moduleStepIndex[selectedLesson.id] ?? 0;
+
+  const completedCount = selectedActivities.filter((_, index) => {
     const key = `${selectedLesson.id}:${index}`;
     return completedActivities[key];
   }).length;
 
-  const lessonProgress = Math.round((completedCount / selectedLesson.activities.length) * 100);
+  const lessonProgress = Math.round((completedCount / selectedActivities.length) * 100);
 
   const courseProgress = Math.round(
     (Object.values(completedActivities).filter(Boolean).length /
       intermediateLessons.reduce((total, lesson) => total + lesson.activities.length, 0)) *
       100
   );
+
+  const moduleIsStarted = Boolean(moduleStarted[selectedLesson.id]);
+  const moduleIsComplete = completedCount === selectedActivities.length;
+  const currentStep = selectedActivities[Math.min(stepIndex, selectedActivities.length - 1)] ?? "";
 
   function updateProfile(field: keyof LearnerProfile, value: number) {
     setProfile((prev) => ({ ...prev, [field]: value }));
@@ -48,6 +57,30 @@ export function Dashboard() {
   function toggleActivity(lessonId: string, activityIndex: number) {
     const key = `${lessonId}:${activityIndex}`;
     setCompletedActivities((prev) => ({ ...prev, [key]: !prev[key] }));
+  }
+
+  function startModule(lessonId: string) {
+    setModuleStarted((prev) => ({ ...prev, [lessonId]: true }));
+    setModuleStepIndex((prev) => ({ ...prev, [lessonId]: prev[lessonId] ?? 0 }));
+  }
+
+  function completeCurrentStep() {
+    const key = `${selectedLesson.id}:${stepIndex}`;
+
+    setCompletedActivities((prev) => ({ ...prev, [key]: true }));
+    setModuleStepIndex((prev) => ({
+      ...prev,
+      [selectedLesson.id]: Math.min(stepIndex + 1, selectedActivities.length - 1),
+    }));
+  }
+
+  function goToStep(direction: -1 | 1) {
+    const next = Math.min(
+      Math.max(stepIndex + direction, 0),
+      Math.max(selectedActivities.length - 1, 0)
+    );
+
+    setModuleStepIndex((prev) => ({ ...prev, [selectedLesson.id]: next }));
   }
 
   async function fetchCoach() {
@@ -97,6 +130,12 @@ export function Dashboard() {
             <ol className="lesson-list">
               {intermediateLessons.map((lesson, index) => {
                 const isActive = lesson.id === selectedLesson.id;
+                const lessonDone = lesson.activities.every((_, activityIndex) => {
+                  const key = `${lesson.id}:${activityIndex}`;
+                  return completedActivities[key];
+                });
+                const lessonInProgress = Boolean(moduleStarted[lesson.id]) && !lessonDone;
+
                 return (
                   <li key={lesson.id}>
                     <button
@@ -106,6 +145,9 @@ export function Dashboard() {
                     >
                       <span className="lesson-index">{index + 1}</span>
                       <span>{lesson.title}</span>
+                      <span className="lesson-status">
+                        {lessonDone ? "Done" : lessonInProgress ? "In Progress" : "Not Started"}
+                      </span>
                     </button>
                   </li>
                 );
@@ -135,13 +177,62 @@ export function Dashboard() {
             <div className="progress-track">
               <div className="progress-fill" style={{ width: `${lessonProgress}%` }} />
             </div>
+            {!moduleIsStarted ? (
+              <button
+                type="button"
+                className="primary-btn"
+                onClick={() => startModule(selectedLesson.id)}
+              >
+                Start Module
+              </button>
+            ) : null}
           </section>
 
           <div className="content-grid">
             <section className="panel">
+              <h3>Module Workflow</h3>
+              {!moduleIsStarted ? (
+                <p className="muted">
+                  Start this module to unlock step-by-step activity guidance.
+                </p>
+              ) : (
+                <div className="workflow">
+                  <p className="step-label">
+                    Step {Math.min(stepIndex + 1, selectedActivities.length)} of {selectedActivities.length}
+                  </p>
+                  <p>{currentStep}</p>
+                  <div className="workflow-actions">
+                    <button
+                      type="button"
+                      className="secondary-btn"
+                      onClick={() => goToStep(-1)}
+                      disabled={stepIndex === 0}
+                    >
+                      Previous
+                    </button>
+                    <button
+                      type="button"
+                      className="primary-btn"
+                      onClick={completeCurrentStep}
+                      disabled={moduleIsComplete}
+                    >
+                      {moduleIsComplete ? "Module Completed" : "Mark Step Complete"}
+                    </button>
+                    <button
+                      type="button"
+                      className="secondary-btn"
+                      onClick={() => goToStep(1)}
+                      disabled={stepIndex >= selectedActivities.length - 1}
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <h3>Activities</h3>
               <ul className="checklist">
-                {selectedLesson.activities.map((activity, index) => {
+                {selectedActivities.map((activity, index) => {
                   const key = `${selectedLesson.id}:${index}`;
                   const checked = Boolean(completedActivities[key]);
                   return (
@@ -208,7 +299,12 @@ export function Dashboard() {
 
             <section className="panel coach-panel">
               <h3>AI Coach</h3>
-              <button type="button" className="primary-btn" onClick={fetchCoach} disabled={loadingCoach}>
+              <button
+                type="button"
+                className="primary-btn"
+                onClick={fetchCoach}
+                disabled={loadingCoach}
+              >
                 {loadingCoach ? "Generating..." : "Generate Guidance"}
               </button>
 
@@ -227,7 +323,7 @@ export function Dashboard() {
                   ) : null}
                 </div>
               ) : (
-                <p className="muted">Uses OPEN_AI_API_KEY in your server environment.</p>
+                <p className="muted">Click Generate Guidance to get personalized coaching.</p>
               )}
             </section>
           </div>
