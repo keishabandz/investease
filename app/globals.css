@@ -238,6 +238,122 @@ body {
   width: 100%;
 }
 
+.training-panel {
+  grid-column: 1 / -1;
+}
+
+.training-group {
+  border-top: 1px solid #e5ebf6;
+  padding-top: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.micro-card {
+  border: 1px solid #dbe4f3;
+  border-radius: 10px;
+  padding: 0.65rem;
+  background: #f9fbff;
+}
+
+.micro-card p {
+  margin: 0.35rem 0 0;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 760px;
+}
+
+th,
+td {
+  border: 1px solid #dce5f5;
+  padding: 0.45rem 0.5rem;
+  text-align: left;
+  vertical-align: top;
+  font-size: 0.88rem;
+}
+
+th {
+  background: #eff4ff;
+}
+
+.resource-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.resource-list li {
+  border: 1px solid #dbe4f3;
+  border-radius: 10px;
+  padding: 0.65rem;
+  background: #f9fbff;
+}
+
+.resource-list a {
+  font-weight: 700;
+  color: #1f56cc;
+  text-decoration: none;
+}
+
+.resource-list a:hover {
+  text-decoration: underline;
+}
+
+.resource-list p {
+  margin: 0.3rem 0 0;
+}
+
+.quiz-card {
+  border: 1px solid #dbe4f3;
+  border-radius: 10px;
+  padding: 0.65rem;
+  margin-bottom: 0.6rem;
+  background: #f9fbff;
+}
+
+.quiz-options {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.option-item {
+  display: flex;
+  gap: 0.45rem;
+  align-items: flex-start;
+}
+
+.quiz-feedback {
+  margin-top: 0.5rem;
+  color: #31579a;
+}
+
+.quiz-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.quiz-score {
+  margin: 0;
+  font-weight: 700;
+  color: #1f56cc;
+}
+
 .coach-panel {
   grid-column: 1 / -1;
 }
@@ -280,6 +396,7 @@ body {
 h1,
 h2,
 h3,
+h4,
 p,
 ul,
 ol {
@@ -293,7 +410,8 @@ ol {
 
 @media (max-width: 980px) {
   .learning-layout,
-  .content-grid {
+  .content-grid,
+  .card-grid {
     grid-template-columns: 1fr;
   }
 
@@ -328,12 +446,18 @@ ol {
 
   .primary-btn,
   .secondary-btn,
-  .workflow-actions {
+  .workflow-actions,
+  .quiz-footer {
     width: 100%;
   }
 
-  .workflow-actions {
+  .workflow-actions,
+  .quiz-footer {
     display: grid;
     gap: 0.5rem;
+  }
+
+  table {
+    min-width: 680px;
   }
 }
