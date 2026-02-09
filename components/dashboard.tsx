@@ -1,9 +1,58 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { foundationalChecklist, intermediateLessons } from "@/lib/curriculum";
 import { recommendPath } from "@/lib/adaptive";
 
-const samplePath = recommendPath({ confidence: 4, valuationSkill: 3, behaviorDiscipline: 6 });
+const sampleLearnerProfile = {
+  confidence: 4,
+  valuationSkill: 3,
+  behaviorDiscipline: 6,
+};
+
+const samplePath = recommendPath(sampleLearnerProfile);
+
+interface CoachResult {
+  headline?: string;
+  summary?: string;
+  nextStep?: string;
+}
 
 export function Dashboard() {
+  const [coach, setCoach] = useState<CoachResult | null>(null);
+  const [loadingCoach, setLoadingCoach] = useState(false);
+
+  useEffect(() => {
+    async function fetchCoach() {
+      setLoadingCoach(true);
+      try {
+        const lessonTitles = samplePath
+          .map((id) => intermediateLessons.find((entry) => entry.id === id)?.title)
+          .filter(Boolean);
+
+        const response = await fetch("/api/ai/coach", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            learnerProfile: sampleLearnerProfile,
+            nextLessons: lessonTitles,
+          }),
+        });
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+        setCoach(data);
+      } catch {
+        // Best-effort section; keep page functional when AI call fails.
+      } finally {
+        setLoadingCoach(false);
+      }
+    }
+
+    fetchCoach();
+  }, []);
+
   return (
     <main>
       <section className="hero">
@@ -65,6 +114,21 @@ export function Dashboard() {
           <li>Reflection analyzer: summarizes journal entries and flags recurring bias patterns.</li>
           <li>Assessment assistant: turns rubric scores into next-step recommendations.</li>
         </ul>
+      </section>
+
+      <section className="card">
+        <h2>AI Coach Preview</h2>
+        {loadingCoach ? <p>Generating guidance...</p> : null}
+        {!loadingCoach && coach?.summary ? (
+          <>
+            {coach.headline ? <p><strong>{coach.headline}</strong></p> : null}
+            <p>{coach.summary}</p>
+            {coach.nextStep ? <p><strong>Next step:</strong> {coach.nextStep}</p> : null}
+          </>
+        ) : null}
+        {!loadingCoach && !coach?.summary ? (
+          <p>AI guidance unavailable. Configure OPEN_AI_API_KEY in Vercel.</p>
+        ) : null}
       </section>
     </main>
   );
