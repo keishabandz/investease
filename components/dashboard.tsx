@@ -234,6 +234,15 @@ export function Dashboard() {
           </button>
         </header>
 
+        {learningNavOpen ? (
+          <button
+            type="button"
+            aria-label="Close navigation"
+            className="nav-backdrop"
+            onClick={() => setLearningNavOpen(false)}
+          />
+        ) : null}
+
         <div className="learn-layout">
           <aside className={learningNavOpen ? "learn-sidebar open" : "learn-sidebar"}>
             <section className="panel">
