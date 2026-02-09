@@ -212,6 +212,13 @@ export function Dashboard() {
     return stageValue === 4;
   });
 
+  const orderedModules = [
+    ...path
+      .map((id) => intermediateLessons.find((lesson) => lesson.id === id))
+      .filter((lesson): lesson is (typeof intermediateLessons)[number] => Boolean(lesson)),
+    ...intermediateLessons.filter((lesson) => !path.includes(lesson.id)),
+  ];
+
   const totalModules = intermediateLessons.length;
   const startedModules = intermediateLessons.filter((lesson) => moduleStarted[lesson.id]).length;
   const completedModules = intermediateLessons.filter((lesson) => (moduleStage[lesson.id] ?? 0) === 4).length;
@@ -825,7 +832,7 @@ export function Dashboard() {
         <section className="panel">
           <h2>Module Catalog</h2>
           <div className="module-list">
-            {intermediateLessons.map((lesson) => {
+            {orderedModules.map((lesson) => {
               const status = (moduleStage[lesson.id] ?? 0) === 4
                 ? "Completed"
                 : moduleStarted[lesson.id]
