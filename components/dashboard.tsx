@@ -73,7 +73,7 @@ function fallbackTraining(title: string, objective: string, activities: string[]
         whyItMatters: "Primary-source evidence improves reliability of your conclusions.",
       },
     ],
-    checkpoint: activities.slice(0, 3).map((activity, index) => ({
+    checkpoint: activities.slice(0, 3).map((activity) => ({
       question: `Which action best demonstrates this step? (${activity})`,
       options: [
         "Write a claim without evidence",
@@ -115,8 +115,6 @@ export function Dashboard() {
     const key = `${selectedLesson.id}:${index}`;
     return completedActivities[key];
   }).length;
-
-  const lessonProgress = Math.round((completedCount / selectedActivities.length) * 100);
 
   const courseProgress = Math.round(
     (Object.values(completedActivities).filter(Boolean).length /
