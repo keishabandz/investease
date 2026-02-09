@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { foundationalChecklist, intermediateLessons } from "@/lib/curriculum";
+import { foundationalChecklist, intermediateLessons, moduleTrainingContent } from "@/lib/curriculum";
 import { LearnerProfile, recommendPath } from "@/lib/adaptive";
 
 interface CoachResult {
@@ -22,6 +22,8 @@ export function Dashboard() {
   const [completedActivities, setCompletedActivities] = useState<Record<string, boolean>>({});
   const [moduleStarted, setModuleStarted] = useState<Record<string, boolean>>({});
   const [moduleStepIndex, setModuleStepIndex] = useState<Record<string, number>>({});
+  const [quizAnswers, setQuizAnswers] = useState<Record<string, number>>({});
+  const [quizSubmitted, setQuizSubmitted] = useState<Record<string, boolean>>({});
   const [coach, setCoach] = useState<CoachResult | null>(null);
   const [loadingCoach, setLoadingCoach] = useState(false);
 
@@ -29,6 +31,7 @@ export function Dashboard() {
 
   const selectedLesson =
     intermediateLessons.find((lesson) => lesson.id === selectedLessonId) ?? intermediateLessons[0];
+  const training = moduleTrainingContent[selectedLesson.id];
 
   const selectedActivities = selectedLesson.activities;
   const stepIndex = moduleStepIndex[selectedLesson.id] ?? 0;
@@ -49,6 +52,16 @@ export function Dashboard() {
   const moduleIsStarted = Boolean(moduleStarted[selectedLesson.id]);
   const moduleIsComplete = completedCount === selectedActivities.length;
   const currentStep = selectedActivities[Math.min(stepIndex, selectedActivities.length - 1)] ?? "";
+
+  const quizAnswerKeyPrefix = `${selectedLesson.id}:quiz:`;
+  const quizHasSubmitted = Boolean(quizSubmitted[selectedLesson.id]);
+
+  const quizScore = training
+    ? training.checkpoint.reduce((score, question, questionIndex) => {
+        const selectedIndex = quizAnswers[`${quizAnswerKeyPrefix}${questionIndex}`];
+        return score + (selectedIndex === question.correctIndex ? 1 : 0);
+      }, 0)
+    : 0;
 
   function updateProfile(field: keyof LearnerProfile, value: number) {
     setProfile((prev) => ({ ...prev, [field]: value }));
@@ -81,6 +94,17 @@ export function Dashboard() {
     );
 
     setModuleStepIndex((prev) => ({ ...prev, [selectedLesson.id]: next }));
+  }
+
+  function answerQuiz(questionIndex: number, optionIndex: number) {
+    setQuizAnswers((prev) => ({
+      ...prev,
+      [`${quizAnswerKeyPrefix}${questionIndex}`]: optionIndex,
+    }));
+  }
+
+  function submitQuiz() {
+    setQuizSubmitted((prev) => ({ ...prev, [selectedLesson.id]: true }));
   }
 
   async function fetchCoach() {
@@ -296,6 +320,115 @@ export function Dashboard() {
                 </label>
               </div>
             </section>
+
+            {training ? (
+              <section className="panel training-panel">
+                <h3>Training Pack: {selectedLesson.title}</h3>
+
+                <div className="training-group">
+                  <h4>Concept Brief</h4>
+                  <ul>
+                    {training.overview.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="training-group">
+                  <h4>Framework Cards</h4>
+                  <div className="card-grid">
+                    {training.frameworkCards.map((card) => (
+                      <article key={card.title} className="micro-card">
+                        <strong>{card.title}</strong>
+                        <p>{card.detail}</p>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="training-group">
+                  <h4>Worked Examples</h4>
+                  <div className="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Business</th>
+                          <th>Revenue Model</th>
+                          <th>Cost Shape</th>
+                          <th>Customer</th>
+                          <th>Risk Signal</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {training.workedExamples.map((row) => (
+                          <tr key={row.business}>
+                            <td>{row.business}</td>
+                            <td>{row.revenueModel}</td>
+                            <td>{row.costShape}</td>
+                            <td>{row.customer}</td>
+                            <td>{row.riskSignal}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div className="training-group">
+                  <h4>Open-Source Data Tasks</h4>
+                  <ul className="resource-list">
+                    {training.openSourceTasks.map((task) => (
+                      <li key={task.source}>
+                        <a href={task.url} target="_blank" rel="noreferrer">
+                          {task.source}
+                        </a>
+                        <p><strong>Task:</strong> {task.task}</p>
+                        <p><strong>Why:</strong> {task.whyItMatters}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="training-group">
+                  <h4>Checkpoint Quiz</h4>
+                  {training.checkpoint.map((question, questionIndex) => {
+                    const selected = quizAnswers[`${quizAnswerKeyPrefix}${questionIndex}`];
+                    const showResult = quizHasSubmitted;
+                    return (
+                      <div key={question.question} className="quiz-card">
+                        <p><strong>Q{questionIndex + 1}.</strong> {question.question}</p>
+                        <div className="quiz-options">
+                          {question.options.map((option, optionIndex) => (
+                            <label key={option} className="option-item">
+                              <input
+                                type="radio"
+                                name={`${selectedLesson.id}-q-${questionIndex}`}
+                                checked={selected === optionIndex}
+                                onChange={() => answerQuiz(questionIndex, optionIndex)}
+                              />
+                              <span>{option}</span>
+                            </label>
+                          ))}
+                        </div>
+                        {showResult ? (
+                          <p className="quiz-feedback">{question.explanation}</p>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                  <div className="quiz-footer">
+                    <button type="button" className="primary-btn" onClick={submitQuiz}>
+                      Submit Checkpoint
+                    </button>
+                    {quizHasSubmitted ? (
+                      <p className="quiz-score">
+                        Score: {quizScore}/{training.checkpoint.length}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              </section>
+            ) : null}
 
             <section className="panel coach-panel">
               <h3>AI Coach</h3>
