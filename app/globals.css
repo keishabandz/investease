@@ -1,6 +1,8 @@
 :root {
   color-scheme: light;
-  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  font-family: Manrope, "Avenir Next", "Segoe UI", sans-serif;
+  background: #f2f5fa;
+  color: #10223e;
 }
 
 * {
@@ -9,98 +11,204 @@
 
 body {
   margin: 0;
-  background: #f6f8fb;
-  color: #14213d;
+  background: radial-gradient(circle at top right, #dce9ff 0%, #f2f5fa 40%);
+  color: #10223e;
 }
 
-main {
-  max-width: 1100px;
+.learning-app {
+  max-width: 1260px;
   margin: 0 auto;
-  padding: 2rem 1rem 4rem;
+  padding: 1.5rem 1rem 2rem;
 }
 
-.hero,
-.card,
-.pathway,
-.module,
-.setup {
-  background: #ffffff;
-  border-radius: 12px;
-  border: 1px solid #dce3ef;
-  padding: 1rem 1.2rem;
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
   margin-bottom: 1rem;
 }
 
-h1,
-h2,
-h3 {
-  margin-top: 0;
+.topbar h1 {
+  margin: 0.1rem 0 0;
+  font-size: clamp(1.4rem, 2.2vw, 2rem);
 }
 
-.grid {
+.eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #31579a;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.topbar-progress {
+  background: #ffffff;
+  border: 1px solid #d8e1f0;
+  border-radius: 12px;
+  padding: 0.7rem 0.9rem;
+  min-width: 160px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 0.9rem;
+  gap: 0.1rem;
+  text-align: right;
 }
 
-.badge {
-  display: inline-block;
-  background: #eaf1ff;
-  color: #2448d8;
-  border-radius: 999px;
-  padding: 0.15rem 0.55rem;
+.topbar-progress span {
   font-size: 0.8rem;
-  margin-right: 0.4rem;
+  color: #5b6f93;
 }
 
-ul {
-  padding-left: 1.1rem;
+.topbar-progress strong {
+  font-size: 1.25rem;
 }
 
-small {
-  color: #52607a;
-}
-
-.controls .slider-grid {
+.learning-layout {
   display: grid;
-  gap: 0.8rem;
+  grid-template-columns: 290px 1fr;
+  gap: 1rem;
 }
 
-.controls label {
+.panel {
+  background: #ffffff;
+  border: 1px solid #d8e1f0;
+  border-radius: 14px;
+  padding: 1rem;
+}
+
+.sidebar,
+.content {
   display: grid;
-  gap: 0.4rem;
-  font-size: 0.95rem;
+  gap: 1rem;
+  align-content: start;
 }
 
-.controls input[type="range"] {
-  width: 100%;
+.lesson-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.45rem;
 }
 
-.module-toggle {
+.lesson-btn {
   width: 100%;
+  border: 1px solid #d8e1f0;
+  border-radius: 10px;
+  background: #f8fbff;
+  color: inherit;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  border: 0;
-  background: transparent;
-  padding: 0;
-  margin-bottom: 0.4rem;
-  color: inherit;
-  cursor: pointer;
+  gap: 0.6rem;
   text-align: left;
+  padding: 0.55rem 0.7rem;
+  cursor: pointer;
 }
 
-.module-toggle span {
-  font-size: 0.82rem;
-  color: #2448d8;
+.lesson-btn.active {
+  border-color: #1f56cc;
+  background: #edf3ff;
+}
+
+.lesson-index {
+  min-width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  background: #d9e6ff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.hero-panel h2 {
+  margin-top: 0.2rem;
+  margin-bottom: 0.4rem;
+}
+
+.progress-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  color: #53698f;
+}
+
+.progress-track {
+  margin-top: 0.4rem;
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: #dce5f5;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #1f56cc, #0f8db8);
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 1rem;
+}
+
+.checklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.check-item {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  border: 1px solid #dbe4f3;
+  background: #fbfdff;
+  padding: 0.55rem 0.65rem;
+  border-radius: 10px;
+}
+
+.check-item.checked {
+  border-color: #9ac5ad;
+  background: #edf9f1;
+}
+
+.check-item input {
+  margin-top: 0.2rem;
+}
+
+.slider-grid {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.slider-grid label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+}
+
+.slider-grid input[type="range"] {
+  width: 100%;
+}
+
+.coach-panel {
+  grid-column: 1 / -1;
 }
 
 .primary-btn {
   border: 0;
-  background: #2448d8;
+  background: #1f56cc;
   color: #fff;
-  padding: 0.5rem 0.85rem;
-  border-radius: 8px;
+  border-radius: 10px;
+  padding: 0.55rem 0.85rem;
+  font-weight: 700;
   cursor: pointer;
 }
 
@@ -111,4 +219,39 @@ small {
 
 .coach-output {
   margin-top: 0.75rem;
+}
+
+.muted {
+  color: #5b6f93;
+}
+
+h1,
+h2,
+h3,
+p,
+ul,
+ol {
+  margin-top: 0;
+}
+
+ul,
+ol {
+  padding-left: 1.2rem;
+}
+
+@media (max-width: 980px) {
+  .learning-layout,
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .topbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .topbar-progress {
+    text-align: left;
+    min-width: 0;
+  }
 }
